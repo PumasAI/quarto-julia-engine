@@ -1,0 +1,84 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Reference quarto-cli version to test against.
+# Full commit hash for reproducibility; comment documents the human-readable version.
+env:
+  QUARTO_CLI_REV: f9ad5b8b5344570b53f70f690fa19ac29442ff43 # v1.9.0
+
+jobs:
+  test:
+    name: Julia engine tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout julia-engine
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: julia-engine
+
+      - name: Checkout quarto-cli
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: quarto-dev/quarto-cli
+          ref: ${{ env.QUARTO_CLI_REV }}
+          path: quarto-cli
+
+      - name: Configure Quarto
+        working-directory: quarto-cli
+        run: ./configure.sh
+
+      # Rebuild the bundled JS from our TS source using the configured quarto,
+      # then verify it matches what's checked in. This catches forgotten rebuilds.
+      - name: Verify bundled JS is up to date
+        working-directory: julia-engine
+        run: |
+          quarto call build-ts-extension src/julia-engine.ts
+          if ! git diff --exit-code _extensions/julia-engine/julia-engine.js; then
+            echo "::error::Bundled JS is out of date. Run 'quarto call build-ts-extension src/julia-engine.ts' and commit the result."
+            exit 1
+          fi
+
+      # Replace the subtree in quarto-cli with our version
+      - name: Inject julia-engine into quarto-cli subtree
+        run: |
+          rm -rf quarto-cli/src/resources/extension-subtrees/julia-engine
+          cp -r julia-engine quarto-cli/src/resources/extension-subtrees/julia-engine
+          rm -rf quarto-cli/src/resources/extension-subtrees/julia-engine/.git
+          rm -rf quarto-cli/src/resources/extension-subtrees/julia-engine/.github
+
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2.6.1
+        with:
+          version: "1.11"
+
+      - name: Cache Julia packages
+        uses: julia-actions/cache@b6a98a496542b2eeda9b4402ce8f79f8fd753d5e # v3.0.0
+
+      - name: Run Julia engine tests
+        working-directory: quarto-cli/tests
+        env:
+          QUARTO_TESTS_NO_CONFIG: "true"
+          QUARTO_TESTS_FORCE_NO_VENV: "true"
+        run: |
+          # Daemon/server control tests (kill, status, render, close, stop)
+          ./run-tests.sh smoke/call/engine/julia/julia.test.ts
+
+      - name: Run Julia smoke-all tests
+        working-directory: quarto-cli/tests
+        env:
+          QUARTO_TESTS_NO_CONFIG: "true"
+          QUARTO_TESTS_FORCE_NO_VENV: "true"
+        run: |
+          ./run-tests.sh \
+            docs/smoke-all/julia/source-ranges-test.qmd \
+            docs/smoke-all/engine-reordering/julia-engine/notebook.qmd
