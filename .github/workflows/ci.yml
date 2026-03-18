@@ -48,6 +48,14 @@ jobs:
             exit 1
           fi
 
+      # Extract the Julia version from quarto-cli's test Manifest so we stay in sync
+      - name: Detect Julia version
+        id: julia-version
+        run: |
+          version=$(grep '^julia_version' quarto-cli/tests/Manifest.toml | sed 's/.*= *"\(.*\)"/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Detected Julia version: $version"
+
       # Replace the subtree in quarto-cli with our version
       - name: Inject julia-engine into quarto-cli subtree
         run: |
@@ -59,7 +67,7 @@ jobs:
       - name: Setup Julia
         uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2.6.1
         with:
-          version: "1.11"
+          version: ${{ steps.julia-version.outputs.version }}
 
       - name: Cache Julia packages
         uses: julia-actions/cache@b6a98a496542b2eeda9b4402ce8f79f8fd753d5e # v3.0.0
