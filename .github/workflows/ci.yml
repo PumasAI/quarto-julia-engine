@@ -10,7 +10,7 @@ permissions:
 # Reference quarto-cli version to test against.
 # Full commit hash for reproducibility; comment documents the human-readable version.
 env:
-  QUARTO_CLI_REV: f9ad5b8b5344570b53f70f690fa19ac29442ff43 # v1.9.0
+  QUARTO_CLI_REV: 97e7649bf14607cf39cda13f013185a4146e047b # v1.9.35
 
 jobs:
   test:
