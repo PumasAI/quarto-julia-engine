@@ -23,22 +23,7 @@ This bundles `src/julia-engine.ts` into `_extensions/julia-engine/julia-engine.j
 
 ## Testing
 
-### Test structure
-
-```
-tests/
-  run-tests.sh          # Unix test runner (auto-discovers smoke/**/*.test.ts)
-  run-tests.ps1         # Windows equivalent
-  smoke/julia-engine/
-    julia.test.ts       # Daemon/server lifecycle (kill, status, render, close, stop)
-    render.test.ts      # Render tests with output verification
-  docs/julia-engine/
-    sleep/              # Test doc for daemon tests
-    source-ranges/      # Source range mapping verification
-    engine-reordering/  # Engine discovery test
-```
-
-Tests are Deno tests using `jsr:` imports — no import map or quarto internals needed. They shell out to `quarto` to render `.qmd` files from `docs/` and verify the results.
+Tests are self-contained Deno tests using `jsr:` imports — no import map or quarto internals needed. `tests/docs/` contains `.qmd` files and quarto projects that the `.test.ts` files in `tests/smoke/` render and verify. These directories mirror quarto-cli's `tests/docs/` and `tests/smoke/` structure and are intended to be merged into those directories when quarto-cli runs its own CI (since this extension is a fixed part of quarto-cli via git subtree).
 
 ### Running tests locally
 
