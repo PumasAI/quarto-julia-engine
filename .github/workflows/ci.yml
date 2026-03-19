@@ -21,26 +21,26 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout julia-engine
+      - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          path: julia-engine
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@909cc5acb0fdd60627fb858598759246509fa755 # v2.0.2
 
       - name: Checkout quarto-cli
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: quarto-dev/quarto-cli
           ref: ${{ env.QUARTO_CLI_REV }}
-          path: quarto-cli
+          path: _quarto-cli
 
       - name: Configure Quarto
-        working-directory: quarto-cli
+        working-directory: _quarto-cli
         run: ./configure.sh
 
       # Rebuild the bundled JS from our TS source using the configured quarto,
       # then verify it matches what's checked in. This catches forgotten rebuilds.
       - name: Verify bundled JS is up to date
-        working-directory: julia-engine
         run: |
           quarto call build-ts-extension src/julia-engine.ts
           if ! git diff --exit-code _extensions/julia-engine/julia-engine.js; then
@@ -48,45 +48,17 @@ jobs:
             exit 1
           fi
 
-      # Extract the Julia version from quarto-cli's test Manifest so we stay in sync
-      - name: Detect Julia version
-        id: julia-version
-        run: |
-          version=$(grep '^julia_version' quarto-cli/tests/Manifest.toml | sed 's/.*= *"\(.*\)"/\1/')
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Detected Julia version: $version"
-
-      # Replace the subtree in quarto-cli with our version
-      - name: Inject julia-engine into quarto-cli subtree
-        run: |
-          rm -rf quarto-cli/src/resources/extension-subtrees/julia-engine
-          cp -r julia-engine quarto-cli/src/resources/extension-subtrees/julia-engine
-          rm -rf quarto-cli/src/resources/extension-subtrees/julia-engine/.git
-          rm -rf quarto-cli/src/resources/extension-subtrees/julia-engine/.github
-
       - name: Setup Julia
         uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2.6.1
         with:
-          version: ${{ steps.julia-version.outputs.version }}
+          version: "1.11"
 
       - name: Cache Julia packages
         uses: julia-actions/cache@b6a98a496542b2eeda9b4402ce8f79f8fd753d5e # v3.0.0
 
-      - name: Run Julia engine tests
-        working-directory: quarto-cli/tests
-        env:
-          QUARTO_TESTS_NO_CONFIG: "true"
-          QUARTO_TESTS_FORCE_NO_VENV: "true"
+      - name: Run tests
+        working-directory: tests
         run: |
-          # Daemon/server control tests (kill, status, render, close, stop)
-          ./run-tests.sh smoke/call/engine/julia/julia.test.ts
-
-      - name: Run Julia smoke-all tests
-        working-directory: quarto-cli/tests
-        env:
-          QUARTO_TESTS_NO_CONFIG: "true"
-          QUARTO_TESTS_FORCE_NO_VENV: "true"
-        run: |
-          ./run-tests.sh \
-            docs/smoke-all/julia/source-ranges-test.qmd \
-            docs/smoke-all/engine-reordering/julia-engine/notebook.qmd
+          deno test --allow-all --no-check \
+            smoke/call/engine/julia/julia.test.ts \
+            smoke/render/julia-render.test.ts
