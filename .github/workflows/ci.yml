@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -31,19 +31,44 @@ jobs:
           ref: ${{ env.QUARTO_CLI_REV }}
           path: _quarto-cli
 
-      - name: Configure Quarto
+      - name: Configure Quarto (Unix)
+        if: runner.os != 'Windows'
         working-directory: _quarto-cli
         run: ./configure.sh
 
+      - name: Configure Quarto (Windows)
+        if: runner.os == 'Windows'
+        working-directory: _quarto-cli
+        run: ./configure.cmd
+        shell: cmd
+
+      - name: Add quarto to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          "$(Get-ChildItem -Path _quarto-cli/package/dist/bin/quarto.cmd | ForEach-Object { $_.FullName } | Split-Path)" >> $env:GITHUB_PATH
+
       # Rebuild the bundled JS from our TS source using the configured quarto,
       # then verify it matches what's checked in. This catches forgotten rebuilds.
-      - name: Verify bundled JS is up to date
+      - name: Verify bundled JS is up to date (Unix)
+        if: runner.os != 'Windows'
         run: |
           quarto call build-ts-extension src/julia-engine.ts
           if ! git diff --exit-code _extensions/julia-engine/julia-engine.js; then
             echo "::error::Bundled JS is out of date. Run 'quarto call build-ts-extension src/julia-engine.ts' and commit the result."
             exit 1
           fi
+
+      - name: Verify bundled JS is up to date (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          quarto call build-ts-extension src/julia-engine.ts
+          $diff = git diff --exit-code _extensions/julia-engine/julia-engine.js
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Bundled JS is out of date. Run 'quarto call build-ts-extension src/julia-engine.ts' and commit the result."
+            exit 1
+          }
 
       - name: Setup Julia
         uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2.6.1
@@ -53,8 +78,20 @@ jobs:
       - name: Cache Julia packages
         uses: julia-actions/cache@b6a98a496542b2eeda9b4402ce8f79f8fd753d5e # v3.0.0
 
-      - name: Run tests
+      - name: Run tests (Unix)
+        if: runner.os != 'Windows'
         run: |
           tests/run-tests.sh \
             smoke/call/engine/julia/julia.test.ts \
+            smoke/render/julia-render.test.ts
+
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $quartoBin = (quarto --paths | Select-Object -First 1)
+          $deno = Join-Path $quartoBin "tools" "x86_64" "deno.exe"
+          Set-Location tests
+          & $deno test --allow-all --no-check `
+            smoke/call/engine/julia/julia.test.ts `
             smoke/render/julia-render.test.ts
