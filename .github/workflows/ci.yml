@@ -24,9 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@909cc5acb0fdd60627fb858598759246509fa755 # v2.0.2
-
       - name: Checkout quarto-cli
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -57,8 +54,9 @@ jobs:
         uses: julia-actions/cache@b6a98a496542b2eeda9b4402ce8f79f8fd753d5e # v3.0.0
 
       - name: Run tests
-        working-directory: tests
+        env:
+          QUARTO_ROOT: ${{ github.workspace }}/_quarto-cli
         run: |
-          deno test --allow-all --no-check \
+          tests/run-tests.sh \
             smoke/call/engine/julia/julia.test.ts \
             smoke/render/julia-render.test.ts
