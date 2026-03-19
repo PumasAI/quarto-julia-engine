@@ -3,4 +3,7 @@
 **/*.quarto_ipynb
 scratch/
 
-/.quarto/
+# Render outputs in test directories
+tests/**/*.html
+tests/**/*.md
+tests/**/*_files/
