@@ -28,7 +28,7 @@ function renderQmd(
 }
 
 Deno.test("source ranges with includes", async () => {
-  const dir = docs("smoke-all/julia");
+  const dir = docs("smoke-all/julia-engine/source-ranges");
   const input = join(dir, "source-ranges-test.qmd");
   renderQmd(input, ["--to", "markdown"]);
 
@@ -36,21 +36,18 @@ Deno.test("source ranges with includes", async () => {
   assert(existsSync(outputFile), `Output file ${outputFile} should exist`);
   const content = await Deno.readTextFile(outputFile);
 
-  // Verify source range annotations appear correctly
   assertMatch(content, /source-ranges-test\.qmd:15/m);
   assertMatch(content, /_included\.qmd:2/m);
 
-  // Clean up
   try { Deno.removeSync(outputFile); } catch { /* ok */ }
 });
 
 Deno.test("engine reordering", () => {
-  const dir = docs("smoke-all/engine-reordering/julia-engine");
+  const dir = docs("smoke-all/julia-engine/engine-reordering");
   renderQmd("notebook.qmd", ["--to", "html"], dir);
 
   const outputFile = join(dir, "notebook.html");
   assert(existsSync(outputFile), `Output file ${outputFile} should exist`);
 
-  // Clean up
   try { Deno.removeSync(outputFile); } catch { /* ok */ }
 });

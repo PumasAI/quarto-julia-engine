@@ -39,8 +39,8 @@ jobs:
       - name: Configure Quarto (Windows)
         if: runner.os == 'Windows'
         working-directory: _quarto-cli
-        run: ./configure.cmd
         shell: cmd
+        run: ./configure.cmd
 
       - name: Add quarto to PATH (Windows)
         if: runner.os == 'Windows'
@@ -64,7 +64,7 @@ jobs:
         shell: pwsh
         run: |
           quarto call build-ts-extension src/julia-engine.ts
-          $diff = git diff --exit-code _extensions/julia-engine/julia-engine.js
+          git diff --exit-code _extensions/julia-engine/julia-engine.js
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Bundled JS is out of date. Run 'quarto call build-ts-extension src/julia-engine.ts' and commit the result."
             exit 1
@@ -80,18 +80,9 @@ jobs:
 
       - name: Run tests (Unix)
         if: runner.os != 'Windows'
-        run: |
-          tests/run-tests.sh \
-            smoke/call/engine/julia/julia.test.ts \
-            smoke/render/julia-render.test.ts
+        run: tests/run-tests.sh
 
       - name: Run tests (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          $quartoBin = (quarto --paths | Select-Object -First 1)
-          $deno = Join-Path $quartoBin "tools" "x86_64" "deno.exe"
-          Set-Location tests
-          & $deno test --allow-all --no-check `
-            smoke/call/engine/julia/julia.test.ts `
-            smoke/render/julia-render.test.ts
+        run: tests/run-tests.ps1

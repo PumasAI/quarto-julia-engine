@@ -2,7 +2,6 @@ import { assert, assertStringIncludes } from "jsr:@std/assert";
 import { existsSync } from "jsr:@std/fs/exists";
 import { join } from "jsr:@std/path";
 
-// Minimal self-contained helpers (no quarto-cli imports needed)
 const isWindows = Deno.build.os === "windows";
 function quartoCmd(): string {
   return isWindows ? "quarto.cmd" : "quarto";
@@ -24,7 +23,6 @@ function quartoRuntimeDir(): string {
       base = join(Deno.env.get("LOCALAPPDATA")!, "quarto");
       break;
     default: {
-      // XDG_RUNTIME_DIR or fall back to XDG_CACHE_HOME / ~/.cache
       const xdgRuntime = Deno.env.get("XDG_RUNTIME_DIR");
       if (xdgRuntime) {
         base = join(xdgRuntime, "quarto");
@@ -38,9 +36,9 @@ function quartoRuntimeDir(): string {
   return join(base, "julia");
 }
 
-const juliaTestDir = docs("call/engine/julia");
+const juliaTestDir = docs("julia-engine/sleep");
 const sleepQmd = "sleep.qmd";
-assert(existsSync(docs("call/engine/julia/sleep.qmd")));
+assert(existsSync(join(juliaTestDir, sleepQmd)));
 
 function assertSuccess(output: Deno.CommandOutput) {
   if (!output.success) {
@@ -81,7 +79,6 @@ Deno.test("julia engine", async (t) => {
     // File might not exist, that's okay
   }
 
-  // Now run all the actual tests as steps
   await t.step("kill without server running", () => {
     const output = new Deno.Command(
       quartoCmd(),
@@ -154,7 +151,6 @@ Deno.test("julia engine", async (t) => {
   });
 
   await t.step("force-closing a running worker", async () => {
-    // spawn a long-running command
     const render_cmd = new Deno.Command(
       quartoCmd(),
       {
@@ -219,7 +215,7 @@ Deno.test("julia engine", async (t) => {
     assertSuccess(stop_output);
     assertStderrIncludes(stop_output, "Server stopped");
 
-    await delay(2000); // allow a little bit of time for the server to stop and the log message to be written
+    await delay(2000);
 
     const log_output = new Deno.Command(
       quartoCmd(),

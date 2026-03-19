@@ -28,4 +28,10 @@ if [ ! -x "$DENO" ]; then
 fi
 
 cd "$SCRIPT_DIR"
-"$DENO" test --allow-all --no-check "$@"
+
+# Run explicit files if given, otherwise discover all .test.ts files
+if [ $# -gt 0 ]; then
+  "$DENO" test --allow-all --no-check "$@"
+else
+  "$DENO" test --allow-all --no-check smoke/
+fi
