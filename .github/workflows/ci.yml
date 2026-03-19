@@ -54,8 +54,6 @@ jobs:
         uses: julia-actions/cache@b6a98a496542b2eeda9b4402ce8f79f8fd753d5e # v3.0.0
 
       - name: Run tests
-        env:
-          QUARTO_ROOT: ${{ github.workspace }}/_quarto-cli
         run: |
           tests/run-tests.sh \
             smoke/call/engine/julia/julia.test.ts \
