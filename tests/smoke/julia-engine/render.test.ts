@@ -28,7 +28,7 @@ function renderQmd(
 }
 
 Deno.test("source ranges with includes", async () => {
-  const dir = docs("smoke-all/julia-engine/source-ranges");
+  const dir = docs("julia-engine/source-ranges");
   const input = join(dir, "source-ranges-test.qmd");
   renderQmd(input, ["--to", "markdown"]);
 
@@ -36,14 +36,16 @@ Deno.test("source ranges with includes", async () => {
   assert(existsSync(outputFile), `Output file ${outputFile} should exist`);
   const content = await Deno.readTextFile(outputFile);
 
-  assertMatch(content, /source-ranges-test\.qmd:15/m);
+  // The julia code outputs __FILE__:__LINE__. Verify source range mapping:
+  // line 10 of source-ranges-test.qmd and line 2 of _included.qmd
+  assertMatch(content, /source-ranges-test\.qmd:10/m);
   assertMatch(content, /_included\.qmd:2/m);
 
   try { Deno.removeSync(outputFile); } catch { /* ok */ }
 });
 
 Deno.test("engine reordering", () => {
-  const dir = docs("smoke-all/julia-engine/engine-reordering");
+  const dir = docs("julia-engine/engine-reordering");
   renderQmd("notebook.qmd", ["--to", "html"], dir);
 
   const outputFile = join(dir, "notebook.html");
