@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.2.0](https://github.com/PumasAI/quarto-julia-engine/releases/tag/v0.2.0) - 2026-03-24
+
 - Added `keep-ipynb` support. When `keep-ipynb: true` is set in document YAML, the executed notebook is written to `<stem>.ipynb` alongside the source file [#8](https://github.com/PumasAI/quarto-julia-engine/pull/8).
-- Updated to QuartoNotebookRunner 0.18.1:
+- Updated to QuartoNotebookRunner 0.18.1 [#11](https://github.com/PumasAI/quarto-julia-engine/pull/11):
   - **`fig-format: retina` support**: Normalized to `png` with doubled `fig-dpi`, matching Quarto's Jupyter and knitr backends. Fixes blurry plots with default HTML settings.
   - **Improved cache invalidation**: Cache key now hashes full `Manifest.toml` content (SHA-224) so dependency version changes correctly invalidate the cache.
 - Updated to QuartoNotebookRunner 0.18.0 [#7](https://github.com/PumasAI/quarto-julia-engine/pull/7):
