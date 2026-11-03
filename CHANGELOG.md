@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- The `julia.test.ts` smoke test now resolves quarto's runtime directory the same way quarto does on Linux. It used to clean up the wrong directory, so its "log file doesn't exist" step failed whenever an earlier render had left a server log behind.
+
 ## [0.2.3](https://github.com/PumasAI/quarto-julia-engine/releases/tag/v0.2.3) - 2026-10-21
 
 - Updated to QuartoNotebookRunner 0.18.5 [#16](https://github.com/PumasAI/quarto-julia-engine/pull/16):
